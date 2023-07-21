@@ -33,14 +33,16 @@ SYMBOLS = [ 'BTCUSDT', 'ETHBTC' ]
 responses = []
 for symbol in SYMBOLS:
     try:
-        with urlopen('https://api.binance.com/api/v3/ticker/24hr?symbol={}'.format(symbol)) as f:
+        with urlopen(f'https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}') as f:
             responses.append(json.load(f))
     except:
         print('Failed loading prices..')
         sys.exit(0)
 
-# Create and print inline message
-messages = []
-for r in responses:
-    messages.append('{}: {:.3f} ({:+.2f}%)'.format(r['symbol'], float(r['askPrice']), float(r['priceChangePercent'])))
+messages = [
+    '{}: {:.3f} ({:+.2f}%)'.format(
+        r['symbol'], float(r['askPrice']), float(r['priceChangePercent'])
+    )
+    for r in responses
+]
 print('   '.join(messages))

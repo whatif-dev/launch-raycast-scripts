@@ -35,11 +35,7 @@ def superset(
     uppercase: int = 1,
     separator: str = '-'
 ) -> str:
-    sets = []
-
-    for _ in range(length):
-        sets.append(charset(set_length))
-
+    sets = [charset(set_length) for _ in range(length)]
     all = ''.join(sets)
 
     # insert uppercase

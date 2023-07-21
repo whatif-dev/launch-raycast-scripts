@@ -77,12 +77,10 @@ def get_files_to_update(base_date=None, base_local_files=None):
             if k == key:
                 yield v
             elif isinstance(v, dict):
-                for result in find(key, v):
-                    yield result
+                yield from find(key, v)
             elif isinstance(v, list):
                 for d in v:
-                    for result in find(key, d):
-                        yield result
+                    yield from find(key, d)
 
     with open(f"{repo_path}/commands/extensions.json") as json_file:
         data = json.load(json_file)
@@ -110,8 +108,10 @@ for file in files_to_update:
     # We are ignoring current file to avoid weird behavior.
     if file == __file__ or file_basename in ignored_files:
         continue
-    repo_files = [os.path.abspath(x) for x in glob(f"{repo_path}/**/{file_basename}", recursive=True)]
-    if repo_files:
+    if repo_files := [
+        os.path.abspath(x)
+        for x in glob(f"{repo_path}/**/{file_basename}", recursive=True)
+    ]:
         copyfile(repo_files[0], file)
 
 rmtree(repo_path, ignore_errors=True)

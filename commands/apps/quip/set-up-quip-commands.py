@@ -29,22 +29,24 @@ yellow = "\u001b[33m"
 green = "\u001b[32m"
 red = "\u001b[31m"
 
-print(f"Reading quip_config.ini...")
+print("Reading quip_config.ini...")
 quip_utils.readConfig()
 doc_types = quip_utils.config.sections()
 quip_utils.checkAPIToken('DEFAULT')
-print(blue + f"The configuration file contains the following document types: {' '.join(doc_types)}")
+print(
+    f"{blue}The configuration file contains the following document types: {' '.join(doc_types)}"
+)
 
-print(yellow + f"Removing old scripts before creating new ones...")
+print(f"{yellow}Removing old scripts before creating new ones...")
 for file in glob.glob("quip-new-*.py"):
-    print(yellow + f"   {file}")
+    print(f"{yellow}   {file}")
     os.remove(file)
 
 for type in doc_types:
     new_script = template
     normalized_type = quip_utils.normalize(type)
     filename = f"quip-new-{normalized_type}.py"
-    print(blue + f"Creating script for '{type}': ", end="")
+    print(f"{blue}Creating script for '{type}': ", end="")
     # Replace config values in template
     template_values = {}
     for k,v in quip_utils.config[type].items():

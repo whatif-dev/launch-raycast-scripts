@@ -80,17 +80,17 @@ to_file_path=get_default_destination_file_path(from_file_path)
 try:
     int_width = int(width)
 except Exception as e:
-    print(f"Width should be a valid integer between 1 and 5120.")
+    print("Width should be a valid integer between 1 and 5120.")
     exit(1)
 
 if int_width > 5120 or int_width < 1:
-    print(f"Width should be a valid integer between 1 and 5120.")
+    print("Width should be a valid integer between 1 and 5120.")
     exit(1)
 
 try:
     int_frame_rate = int(frame_rate)
 except Exception as e:
-    print(f"Frame rate should be valid integer between 1 and 60.")
+    print("Frame rate should be valid integer between 1 and 60.")
     exit(1)
 
 if int_frame_rate <= 60 and int_frame_rate >= 1:
@@ -107,5 +107,5 @@ if int_frame_rate <= 60 and int_frame_rate >= 1:
     print("GIF successfully generated 🎉")
     exit(0)
 
-print(f"Frame rate should be valid integer between 1 and 60.")
+print("Frame rate should be valid integer between 1 and 60.")
 exit(0)

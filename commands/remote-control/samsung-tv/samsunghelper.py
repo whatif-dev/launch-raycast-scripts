@@ -30,14 +30,13 @@ class SamsungTVWS:
         self.connection = None
 
     def _get_token(self):
-        if self.token_file is not None:
-            try:
-                with open(self.token_file, 'r') as token_file:
-                    return token_file.readline()
-            except:
-                return ''
-        else:
+        if self.token_file is None:
             return self.token
+        try:
+            with open(self.token_file, 'r') as token_file:
+                return token_file.readline()
+        except:
+            return ''
 
     def _set_token(self, token):
         _LOGGING.info('New token %s', token)

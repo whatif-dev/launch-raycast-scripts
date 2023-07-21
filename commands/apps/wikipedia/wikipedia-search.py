@@ -48,10 +48,10 @@ def white(message):
 
 # Import Wikipedia module
 try:
-  import wikipedia
+    import wikipedia
 except ImportError:
-  print(red(f"Wikipedia module not installed, run `pip install wikipedia`"))
-  exit(1)
+    print(red("Wikipedia module not installed, run `pip install wikipedia`"))
+    exit(1)
 
 # This is to disable the wikipedia module warning about the parser in BeautifulSoup
 import warnings

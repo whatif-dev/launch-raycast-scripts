@@ -47,8 +47,8 @@ if os.path.isdir(destination_path):
 
 command = f"playground -v -t '{destination_path}'"
 if url_to_open:
-    command = command + f" -u '{url_to_open}'"
+    command = f"{command} -u '{url_to_open}'"
 if dependencies:
-    command = command + f" -d '{dependencies}'"
+    command = f"{command} -d '{dependencies}'"
 
 os.system(command)

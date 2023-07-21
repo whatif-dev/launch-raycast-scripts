@@ -46,10 +46,9 @@ url = "https://api.doppler.com/v1/share/secrets/plain"
 
 payload = {
     "expire_views": expire_views,
-    "expire_days": expire_views
+    "expire_days": expire_views,
+    'secret': read_from_clipboard(),
 }
-
-payload['secret'] = read_from_clipboard()
 
 headers = {"Content-Type": "application/json"}
 
@@ -61,10 +60,10 @@ request.add_header('Content-Length', len(payload_as_bytes))
 try:
     response = urllib.request.urlopen(request, payload_as_bytes)
 except urllib.error.HTTPError as err:
-    print("Failed to create secret. HTTP Error code: {}".format(err.code))
+    print(f"Failed to create secret. HTTP Error code: {err.code}")
     sys.exit(1)
 except urllib.error.URLError as err:
-    print("Failed to create secret: {}".format(err.reason))
+    print(f"Failed to create secret: {err.reason}")
     sys.exit(1)
 else:
     json_response = json.load(response)

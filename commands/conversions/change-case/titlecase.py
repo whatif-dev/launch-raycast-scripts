@@ -35,13 +35,13 @@ def __dict_replace(s, d):
 SMALL = "a|an|and|as|at|but|by|en|for|if|in|of|on|or|the|to|v\.?|via|vs\.?"
 PUNCT = r"""!"#$%&'‘()*+,\-./:;?@[\\\]_`{|}~"""
 
-SMALL_WORDS = re.compile(r"^(%s)$" % SMALL, re.I)
+SMALL_WORDS = re.compile(f"^({SMALL})$", re.I)
 INLINE_PERIOD = re.compile(r"[a-z][.][a-z]", re.I)
-UC_ELSEWHERE = re.compile(r"[%s]*?[a-zA-Z]+[A-Z]+?" % PUNCT)
-CAPFIRST = re.compile(r"^[%s]*?([A-Za-z])" % PUNCT)
+UC_ELSEWHERE = re.compile(f"[{PUNCT}]*?[a-zA-Z]+[A-Z]+?")
+CAPFIRST = re.compile(f"^[{PUNCT}]*?([A-Za-z])")
 SMALL_FIRST = re.compile(r"^([%s]*)(%s)\b" % (PUNCT, SMALL), re.I)
 SMALL_LAST = re.compile(r"\b(%s)[%s]?$" % (SMALL, PUNCT), re.I)
-SUBPHRASE = re.compile(r"([:.;?!][ ])(%s)" % SMALL)
+SUBPHRASE = re.compile(f"([:.;?!][ ])({SMALL})")
 APOS_SECOND = re.compile(r"^[dol]{1}['‘]{1}[a-z]+$", re.I)
 ALL_CAPS = re.compile(r"^[A-Z\s%s]+$" % PUNCT)
 UC_INITIALS = re.compile(r"^(?:[A-Z]{1}\.{1}|[A-Z]{1}\.{1}[A-Z]{1})+$")
@@ -87,28 +87,26 @@ def titlecase(text):
                 tc_line.append(word.lower())
                 continue
 
-            match = MAC_MC.match(word)
-            if match:
-                tc_line.append(
-                    "%s%s" % (match.group(1).capitalize(), match.group(2).capitalize())
-                )
+            if match := MAC_MC.match(word):
+                tc_line.append(f"{match.group(1).capitalize()}{match.group(2).capitalize()}")
                 continue
 
-            hyphenated = []
-            for item in word.split("-"):
-                hyphenated.append(CAPFIRST.sub(lambda m: m.group(0).upper(), item))
+            hyphenated = [
+                CAPFIRST.sub(lambda m: m.group(0).upper(), item)
+                for item in word.split("-")
+            ]
             tc_line.append("-".join(hyphenated))
 
         result = " ".join(tc_line)
 
         result = SMALL_FIRST.sub(
-            lambda m: "%s%s" % (m.group(1), m.group(2).capitalize()), result
+            lambda m: f"{m.group(1)}{m.group(2).capitalize()}", result
         )
 
         result = SMALL_LAST.sub(lambda m: m.group(0).capitalize(), result)
 
         result = SUBPHRASE.sub(
-            lambda m: "%s%s" % (m.group(1), m.group(2).capitalize()), result
+            lambda m: f"{m.group(1)}{m.group(2).capitalize()}", result
         )
 
         processed.append(result)

@@ -30,8 +30,9 @@ home = Path.home()
 def save_image():
     im = ImageGrab.grabclipboard()
     if im != None:
-        filepath = home / "Downloads/ScreenShot-{}.png".format(
-            datetime.now().strftime("%Y%m%d-%H%M%S")
+        filepath = (
+            home
+            / f'Downloads/ScreenShot-{datetime.now().strftime("%Y%m%d-%H%M%S")}.png'
         )
         im.save(filepath.as_posix())
         print(f"OK Saved In: {filepath}")

@@ -67,13 +67,11 @@ def setClipboardData(text):
 
 def quip_open(thing, doc_type='DEFAULT'):
     # thing can be a DocID or a URL. DocIDs are 11 or 12 characters long
-    if len(thing) in [11,12]:
+    if len(thing) in {11, 12}:
         url = config[doc_type].get('BaseURL', 'https://quip.com/') + thing
     else:
         url = thing
-    app_args=[]
-    if config[doc_type].getboolean('UseQuipApp'):
-        app_args=["-a", "Quip"]
+    app_args = ["-a", "Quip"] if config[doc_type].getboolean('UseQuipApp') else []
     try:
         open_args=["/usr/bin/open", *app_args, url]
         # We use Popen to put the open process in the background.
@@ -96,10 +94,7 @@ def normalize(s):
 def quip_new_doc(doc_type, text):
     readConfig()
     if not config.has_section(doc_type):
-        # Map section names to their "normalized" variants used in the filenames
-        denormalized_types = {}
-        for t in config.sections():
-            denormalized_types[normalize(t)] = t
+        denormalized_types = {normalize(t): t for t in config.sections()}
         if doc_type in denormalized_types:
             doc_type = denormalized_types[doc_type]
         else:
@@ -109,7 +104,7 @@ def quip_new_doc(doc_type, text):
     # Prepend date to the text if needed
     if text and config[doc_type].getboolean('PrependDate'):
         dateformat = config[doc_type].get('DateFormat', "%Y-%m-%d")
-        text = datetime.now().strftime(dateformat) + " " + text
+        text = f"{datetime.now().strftime(dateformat)} {text}"
 
     # What to do?
     action = config[doc_type].get('action', 'create')
@@ -121,26 +116,21 @@ def quip_new_doc(doc_type, text):
         client = quip.QuipClient(access_token=config[doc_type]['APIToken'], base_url=config[doc_type]['APIURL'])
 
         if action == 'create':
-            # print(f"Creating new note '{text}' in folder {folder_id}...")
-            folders = []
             folderID = config[doc_type].get('FolderID',None)
-            if folderID:
-                folders = [folderID]
-            templateID = config[doc_type].get('TemplateID', None)
-            # If TemplateID is given, use it to create the doc, otherwise create an empty one
-            if templateID:
+            folders = [folderID] if folderID else []
+            if templateID := config[doc_type].get('TemplateID', None):
                 result = client.copy_document(templateID, folder_ids=[folderID], title=text)
             else:
                 result = client.new_document(content=text, format="markdown", member_ids=folders)
             message_title = f"New {doc_type} created"
             message_body = message_title
         elif action == 'add':
-            listmarkup = { "todo": "[] ", "bullet": "- ", "num": "1. " }
             listtype = config[doc_type].get('ListType', 'none')
             docid = config[doc_type].get('DocID', None)
             if not docid:
-                fail(f"Error: no DocID provided, needed for 'add' action.")
+                fail("Error: no DocID provided, needed for 'add' action.")
             if text:
+                listmarkup = { "todo": "[] ", "bullet": "- ", "num": "1. " }
                 if listtype in listmarkup:
                     text = listmarkup[listtype] + text
                 result = client.edit_document(docid, text, format='markdown', section_id='')
@@ -160,23 +150,22 @@ def quip_new_doc(doc_type, text):
         elif e.code == 400:
             fail(f"Please configure/verify folder ID for [{doc_type}] in {config_file}")
         else:
-            fail(f"Received a Quip error:", e, file=sys.stderr)
+            fail("Received a Quip error:", e, file=sys.stderr)
 
     if result:
-        url = result['thread']['link']
-        if url:
+        if url := result['thread']['link']:
             if config[doc_type].getboolean('CopyURLToClipboard'):
                 setClipboardData(url)
-                message_body = message_body + f", URL copied to clipboard"
+                message_body = f"{message_body}, URL copied to clipboard"
 
             if config[doc_type].getboolean('OpenDoc'):
-                message_body = message_body + f", opening {url}"
+                message_body = f"{message_body}, opening {url}"
                 quip_open(url, doc_type)
-            message_body = message_body + "."
+            message_body = f"{message_body}."
             print(message_body)
             if config[doc_type].getboolean('Notify'):
                 notify(message_title, message_body)
         else:
-            fail(f"Something went wrong, could not get the document URL.")
+            fail("Something went wrong, could not get the document URL.")
     else:
-        fail(f"Something went wrong, could not create document.")
+        fail("Something went wrong, could not create document.")

@@ -31,7 +31,7 @@ ip_address = '192.168.0.00'
 
 # This will allow one time authentication on the TV.
 # Caches TV ssl token for later use.
-token_file = os.path.dirname(os.path.realpath(__file__)) + '/tv-token.txt'
+token_file = f'{os.path.dirname(os.path.realpath(__file__))}/tv-token.txt'
 
 tv = SamsungTVWS(host=ip_address, port=8002,token_file=token_file)
 

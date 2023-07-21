@@ -43,8 +43,6 @@ if not TRELLO_LIST_ID:
   exit(1)
 
 name = sys.argv[1]
-due_date = sys.argv[2]
-
 payload = {
   'key': TRELLO_KEY,
   'token': TRELLO_TOKEN,
@@ -53,7 +51,7 @@ payload = {
   'pos': 'top',
 }
 
-if due_date:
+if due_date := sys.argv[2]:
   try:
     datetime = dateparser.parse(due_date)
     payload['due'] = datetime.strftime('%Y-%m-%d')

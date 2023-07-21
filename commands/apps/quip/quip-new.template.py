@@ -19,14 +19,11 @@ import sys
 import re
 import quip_utils
 
-# Determine the document type to create from the script filename.
-match = re.search('quip-new-(.+)\.py', sys.argv[0])
-if match:
-    doc_type = match.group(1)
-    if len(sys.argv) > 1:
-        arg = sys.argv[1]
-    else:
-        arg = None
+if match := re.search('quip-new-(.+)\.py', sys.argv[0]):
+    doc_type = match[1]
+    arg = sys.argv[1] if len(sys.argv) > 1 else None
     quip_utils.quip_new_doc(doc_type, arg)
 else:
-    quip_utils.fail(f"Error: Could not determine document type to use - incorrect script name.")
+    quip_utils.fail(
+        "Error: Could not determine document type to use - incorrect script name."
+    )

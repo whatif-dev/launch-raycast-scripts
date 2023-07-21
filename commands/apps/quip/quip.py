@@ -163,7 +163,7 @@ class QuipClient(object):
 
     def get_user(self, id):
         """Returns the user with the given ID."""
-        return self._fetch_json("users/" + id)
+        return self._fetch_json(f"users/{id}")
 
     def get_users(self, ids):
         """Returns a dictionary of users for the given IDs."""
@@ -181,7 +181,7 @@ class QuipClient(object):
 
     def get_folder(self, id):
         """Returns the folder with the given ID."""
-        return self._fetch_json("folders/" + id)
+        return self._fetch_json(f"folders/{id}")
 
     def get_folders(self, ids):
         """Returns a dictionary of folders for the given IDs."""
@@ -230,8 +230,8 @@ class QuipClient(object):
         want returned. The maximum is 100.
         """
         return self._fetch_json(
-            "messages/" + thread_id, max_created_usec=max_created_usec,
-            count=count)
+            f"messages/{thread_id}", max_created_usec=max_created_usec, count=count
+        )
 
     def new_message(self, thread_id, content=None, **kwargs):
         """Sends a message on the given thread.
@@ -241,13 +241,12 @@ class QuipClient(object):
         args = {
             "thread_id": thread_id,
             "content": content,
-        }
-        args.update(kwargs)
+        } | kwargs
         return self._fetch_json("messages/new", post_data=args)
 
     def get_thread(self, id):
         """Returns the thread with the given ID."""
-        return self._fetch_json("threads/" + id)
+        return self._fetch_json(f"threads/{id}")
 
     def get_threads(self, ids):
         """Returns a dictionary of threads for the given IDs."""
@@ -335,7 +334,7 @@ class QuipClient(object):
             args["title"] = title
         if values:
             args["values"] = json.dumps(values)
-        args.update(kwargs)
+        args |= kwargs
         return self._fetch_json("threads/copy-document", post_data=args)
 
     def merge_comments(self, original_id, children_ids, ignore_user_ids=[]):
@@ -374,7 +373,8 @@ class QuipClient(object):
                             "highlight_section_ids"][0]
                     else:
                         anno_loc = thread["html"].find(
-                            '<annotation id="%s"' % message["annotation"]["id"])
+                            f'<annotation id="{message["annotation"]["id"]}"'
+                        )
                         loc = thread["html"].rfind("id=", 0, anno_loc)
                         if anno_loc >= 0 and loc >= 0:
                             section_id = thread["html"][loc + 4:loc + 15]
@@ -410,9 +410,8 @@ class QuipClient(object):
             "content": content,
             "location": operation,
             "format": format,
-            "section_id": section_id
-        }
-        args.update(kwargs)
+            "section_id": section_id,
+        } | kwargs
         return self._fetch_json("threads/edit-document", post_data=args)
 
     def add_to_first_list(self, thread_id, *items, **kwargs):
@@ -427,17 +426,16 @@ class QuipClient(object):
             "thread_id": thread_id,
             "content": "\n\n".join(items),
             "format": "markdown",
-            "operation": self.AFTER_SECTION
-        }
-        args.update(kwargs)
+            "operation": self.AFTER_SECTION,
+        } | kwargs
         if "section_id" not in args:
-            first_list = self.get_first_list(
-                thread_id, kwargs.pop("document_html", None))
-            if first_list:
+            if first_list := self.get_first_list(
+                thread_id, kwargs.pop("document_html", None)
+            ):
                 args["section_id"] = self.get_last_list_item_id(first_list)
         if not args.get("section_id"):
             args["operation"] = self.APPEND
-            args["content"] = "\n\n".join(["    * %s" % i for i in items])
+            args["content"] = "\n\n".join([f"    * {i}" for i in items])
         return self.edit_document(**args)
 
     def add_to_spreadsheet(self, thread_id, *rows, **kwargs):
@@ -448,8 +446,12 @@ class QuipClient(object):
             client.add_to_spreadsheet(thread_id, ["5/1/2014", 2.24])
 
         """
-        content = "".join(["<tr>%s</tr>" % "".join(
-            ["<td>%s</td>" % cell for cell in row]) for row in rows])
+        content = "".join(
+            [
+                ("<tr>%s</tr>" % "".join([f"<td>{cell}</td>" for cell in row]))
+                for row in rows
+            ]
+        )
         if kwargs.get("name"):
             spreadsheet = self.get_named_spreadsheet(kwargs["name"], thread_id)
         else:
@@ -483,8 +485,7 @@ class QuipClient(object):
         else:
             spreadsheet = self.get_first_spreadsheet(thread_id)
         headers = self.get_spreadsheet_header_items(spreadsheet)
-        row = self.find_row_from_header(spreadsheet, header, value)
-        if row:
+        if row := self.find_row_from_header(spreadsheet, header, value):
             ids = self.get_row_ids(row)
             for head, val in iteritems(updates):
                 index = self.get_index_of_header(headers, head)
@@ -526,16 +527,15 @@ class QuipClient(object):
                 else:
                     cells.append("")
         cells.extend(extra_items)
-        content = "<tr>%s</tr>" % "".join(
-            ["<td>%s</td>" % cell for cell in cells])
+        content = f'<tr>{"".join([f"<td>{cell}</td>" for cell in cells])}</tr>'
         section_id = self.get_last_row_item_id(spreadsheet)
-        response = self.edit_document(
+        return self.edit_document(
             thread_id=thread_id,
             content=content,
             section_id=section_id,
             operation=self.AFTER_SECTION,
-            **args)
-        return response
+            **args
+        )
 
     def toggle_checkmark(self, thread_id, item, checked=True):
         """Sets the checked state of the given list item to the given state.
@@ -545,10 +545,7 @@ class QuipClient(object):
             client.toggle_checkmark(thread_id, list[0])
 
         """
-        if checked:
-            item.attrib["class"] = "checked"
-        else:
-            item.attrib["class"] = ""
+        item.attrib["class"] = "checked" if checked else ""
         return self.edit_document(thread_id=thread_id,
                                   content=xml.etree.cElementTree.tostring(item),
                                   section_id=item.attrib["id"],
@@ -571,30 +568,26 @@ class QuipClient(object):
     def get_section(self, section_id, thread_id=None, document_html=None):
         if not document_html:
             document_html = self.get_thread(thread_id).get("html")
-            if not document_html:
-                return None
-        tree = self.parse_document_html(document_html)
-        element = list(tree.iterfind(".//*[@id='%s']" % section_id))
-        if not element:
+        if not document_html:
             return None
-        return element[0]
+        tree = self.parse_document_html(document_html)
+        element = list(tree.iterfind(f".//*[@id='{section_id}']"))
+        return None if not element else element[0]
 
     def get_named_spreadsheet(self, name, thread_id=None, document_html=None):
         if not document_html:
             document_html = self.get_thread(thread_id).get("html")
-            if not document_html:
-                return None
-        tree = self.parse_document_html(document_html)
-        element = list(tree.iterfind(".//*[@title='%s']" % name))
-        if not element:
+        if not document_html:
             return None
-        return element[0]
+        tree = self.parse_document_html(document_html)
+        element = list(tree.iterfind(f".//*[@title='{name}']"))
+        return None if not element else element[0]
 
     def _get_container(self, thread_id, document_html, container, index):
         if not document_html:
             document_html = self.get_thread(thread_id).get("html")
-            if not document_html:
-                return None
+        if not document_html:
+            return None
         tree = self.parse_document_html(document_html)
         lists = list(tree.iter(container))
         if not lists:
@@ -665,8 +658,6 @@ class QuipClient(object):
                 char = ord(header.upper())
                 if ord('A') < char < ord('Z'):
                     return char - ord('A') + 1
-            else:
-                pass
         return default
 
     def find_row_from_header(self, spreadsheet_tree, header, value):
@@ -705,8 +696,7 @@ class QuipClient(object):
                 data = {
                     "id": cell.attrib.get("id"),
                 }
-                images = list(cell.iter("img"))
-                if images:
+                if images := list(cell.iter("img")):
                     data["content"] = images[0].attrib.get("src")
                 else:
                     data["content"] = list(cell.itertext())[0].replace(
@@ -722,7 +712,7 @@ class QuipClient(object):
 
     def parse_document_html(self, document_html):
         """Returns an `ElementTree` for the given Quip document HTML"""
-        document_xml = "<html>" + document_html + "</html>"
+        document_xml = f"<html>{document_html}</html>"
         return xml.etree.cElementTree.fromstring(document_xml.encode("utf-8"))
 
     def parse_micros(self, usec):
@@ -736,10 +726,9 @@ class QuipClient(object):
         The object is described in detail here:
         https://docs.python.org/2/library/urllib2.html#urllib2.urlopen
         """
-        request = Request(
-            url=self._url("blob/%s/%s" % (thread_id, blob_id)))
+        request = Request(url=self._url(f"blob/{thread_id}/{blob_id}"))
         if self.access_token:
-            request.add_header("Authorization", "Bearer " + self.access_token)
+            request.add_header("Authorization", f"Bearer {self.access_token}")
         try:
             return urlopen(request, timeout=self.request_timeout)
         except HTTPError as error:
@@ -757,10 +746,10 @@ class QuipClient(object):
         blob can be any file-like object. Requires the 'requests' module.
         """
         import requests
-        url = "blob/" + thread_id
+        url = f"blob/{thread_id}"
         headers = None
         if self.access_token:
-            headers = {"Authorization": "Bearer " + self.access_token}
+            headers = {"Authorization": f"Bearer {self.access_token}"}
         if name:
             blob = (name, blob)
         try:
@@ -785,16 +774,13 @@ class QuipClient(object):
     def _fetch_json(self, path, post_data=None, **args):
         request = Request(url=self._url(path, **args))
         if post_data:
-            post_data = dict((k, v) for k, v in post_data.items()
-                             if v or isinstance(v, int))
+            post_data = {
+                k: v for k, v in post_data.items() if v or isinstance(v, int)
+            }
             request_data = urlencode(self._clean(**post_data))
-            if PY3:
-                request.data = request_data.encode()
-            else:
-                request.data = request_data
-
+            request.data = request_data.encode() if PY3 else request_data
         if self.access_token:
-            request.add_header("Authorization", "Bearer " + self.access_token)
+            request.add_header("Authorization", f"Bearer {self.access_token}")
         try:
             return json.loads(
                 urlopen(
@@ -808,12 +794,14 @@ class QuipClient(object):
             raise QuipError(error.code, message, error)
 
     def _clean(self, **args):
-        return dict((k, str(v) if isinstance(v, int) else v.encode("utf-8"))
-                    for k, v in args.items() if v or isinstance(v, int))
+        return {
+            k: str(v) if isinstance(v, int) else v.encode("utf-8")
+            for k, v in args.items()
+            if v or isinstance(v, int)
+        }
 
     def _url(self, path, **args):
-        url = self.base_url + "/1/" + path
-        args = self._clean(**args)
-        if args:
-            url += "?" + urlencode(args)
+        url = f"{self.base_url}/1/{path}"
+        if args := self._clean(**args):
+            url += f"?{urlencode(args)}"
         return url

@@ -33,14 +33,8 @@ TO_LANG_DEFAULT = 'en'
 
 import json, os, sys, subprocess
 
-from_language = FROM_LANG_DEFAULT
-if sys.argv[2]:
-    from_language = sys.argv[2]
-
-to_language = TO_LANG_DEFAULT
-if sys.argv[3]:
-    to_language = sys.argv[3]
-
+from_language = sys.argv[2] if sys.argv[2] else FROM_LANG_DEFAULT
+to_language = sys.argv[3] if sys.argv[3] else TO_LANG_DEFAULT
 colors = {
   'green': '\033[92m',
   'yellow': '\033[93m',
@@ -110,8 +104,6 @@ translations = translate(f'{from_language}:{to_language}', query)
 
 if translations is None:
     translations = translate(f'{to_language}:{from_language}', query)
-    # TODO: If second attempt failed, use result from first attempt and offer
-    #  a "Did you mean ..." functionality.
-    print_translations(translations)
-else:
-    print_translations(translations)
+# TODO: If second attempt failed, use result from first attempt and offer
+#  a "Did you mean ..." functionality.
+print_translations(translations)
